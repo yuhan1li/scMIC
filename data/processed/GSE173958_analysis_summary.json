@@ -1,0 +1,38 @@
+{
+  "dominant_metastatic_clone_key": "1I+48+C|105D+67|105D+67|105D+67|105D+67|NONE|NONE|NONE|NONE|NONE",
+  "metrics": {
+    "dataset": "GSE173958_M1",
+    "primary_cells": 3854,
+    "lineage_labeled_primary_cells": 2811,
+    "aggressive_clone_primary_cells": 131,
+    "top20_percent_threshold": 0.9049138251696777,
+    "sctour_MIC_AUROC": 0.7437307736128519,
+    "sctour_MIC_AUPRC": 0.11699337341165238,
+    "transport_mass_AUROC": 0.44769283354221256,
+    "state_transport_MIC_AUROC": 0.7392389199042952,
+    "fisher_odds_ratio_top20_vs_aggressive_clone": 4.964511334076551,
+    "fisher_pvalue_top20_vs_aggressive_clone": 2.7361662028779547e-18
+  },
+  "top_shap_genes": [
+    "mt-Atp6",
+    "mt-Co2",
+    "Rpl32",
+    "S100a6",
+    "mt-Co1",
+    "Elf3",
+    "Vim",
+    "Tmsb10",
+    "Rpl23",
+    "Akr1c19",
+    "mt-Co3",
+    "Aqp1",
+    "Clu",
+    "Ngf",
+    "Rps27a",
+    "Sptssb",
+    "Nkx2-3",
+    "Rps12",
+    "Lgals1",
+    "mt-Cytb"
+  ]
+}

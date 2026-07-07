@@ -5,3 +5,4 @@ include requirements.txt
 recursive-include docs *
 recursive-include notebooks *.ipynb *.md
 recursive-include figures *.png
+recursive-include data/processed *.csv *.json

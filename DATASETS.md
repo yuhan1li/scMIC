@@ -14,9 +14,24 @@ The GEO file list includes `GSE173958_RAW.tar` and separate 10x files such as
 `M2-Lung`. This makes it suitable for primary-to-organ-specific metastatic
 mapping.
 
+Completed M1 validation run:
+
+- Downloaded `GSE173958_RAW.tar` on the server and analyzed M1 primary tumor,
+  M1-Met, M1-Liver, and M1-Lung.
+- Parsed macsGESTALT `*.stats.txt.gz` files to recover lineage clone labels from
+  10x cell barcodes.
+- Dominant metastatic lineage group:
+  `1I+48+C|105D+67|105D+67|105D+67|105D+67|NONE|NONE|NONE|NONE|NONE`.
+- `sctour_MIC_score` versus dominant aggressive lineage in primary cells:
+  AUROC `0.744`, AUPRC `0.117`, top-20% enrichment OR `4.96`,
+  Fisher P `2.74e-18`.
+- OT transport mass alone was not sufficient as a pan-MIC score in this run
+  (AUROC `0.448`), so the current framework uses scTour for the main MIC score
+  and OT for organotropic mapping.
+
 Validation tasks:
 
-- AUROC/AUPRC for `pan_MIC_score` against aggressive clone labels.
+- AUROC/AUPRC for `sctour_MIC_score` against aggressive clone labels.
 - Enrichment of top 5%, 10%, and 20% predicted MICs in aggressive clones.
 - Correlation between organ-specific scores and observed metastatic harvest
   sites.

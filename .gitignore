@@ -3,7 +3,10 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 data/raw/
-data/processed/
+data/processed/*.h5ad
+data/processed/*.rds
+data/processed/*.loom
+data/processed/*.mtx
 results/*.tmp
 results/*.h5ad
 results/*.rds

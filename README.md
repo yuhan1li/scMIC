@@ -4,13 +4,14 @@
 
 <img src="figures/motmic_algorithm_schematic.png" width="520px" align="left">
 
-MOT-MIC is a computational framework for discovering metastasis-initiating
+scMIC is a computational framework for discovering metastasis-initiating
 cells from paired primary and metastatic single-cell transcriptomes.
 
-It uses a multi-organ optimal-transport architecture to map primary tumor cells
-to metastatic tumor cells across different secondary sites, then assigns each
-primary cell both a pan-metastatic score and organ-specific metastatic
-propensity scores.
+It uses scTour to learn a metastatic-state latent axis, then uses
+unbalanced optimal transport to map primary tumor cells to metastatic tumor
+cells across different secondary sites. In the current validated workflow,
+`sctour_MIC_score` is the main primary-cell MIC score and OT-derived scores are
+used for organ-specific metastatic propensity.
 
 MOT-MIC is designed for method development and validation on public metastasis
 datasets, including lineage-traced, time-course, paired human, spatial, and
@@ -20,10 +21,10 @@ bulk survival cohorts.
 
 ## Key features
 
-- Multi-organ metastasis-initiating cell scoring from paired primary and
+- scTour-based metastasis-initiating cell scoring from paired primary and
   metastatic scRNA-seq data.
 - Unbalanced optimal transport with sparse top-k origin filtering for
-  interpretable primary-to-metastasis mapping.
+  interpretable primary-to-metastasis organotropic mapping.
 - Organotropic MIC scores for liver, lung, bone, brain, or user-defined
   metastatic sites.
 - Lineage-aware validation workflow using `GSE173958`, the strongest available
@@ -41,6 +42,7 @@ Clone the repository and install the required Python packages:
 git clone https://github.com/yuhan1li/scMIC.git
 cd scMIC
 pip install -r requirements.txt
+pip install -r requirements-analysis.txt
 ```
 
 Regenerate the algorithm schematic:
@@ -54,27 +56,50 @@ python scripts/make_diagram.py
 ```python
 from pathlib import Path
 
-from motmic import MOTMIC, downsample_cells, find_10x_triplet, read_10x_mtx
-from motmic.interpret import rank_genes_with_shap
+from motmic import find_10x_triplet, read_10x_mtx
 
 raw_dir = Path("data/raw/GSE173958")
-primary_files = find_10x_triplet(raw_dir, sample_token="primary")
-liver_files = find_10x_triplet(raw_dir, sample_token="liver")
-lung_files = find_10x_triplet(raw_dir, sample_token="lung")
+primary_files = find_10x_triplet(raw_dir, sample_token="M1-PT")
+liver_files = find_10x_triplet(raw_dir, sample_token="M1-Liver")
+lung_files = find_10x_triplet(raw_dir, sample_token="M1-Lung")
 
-primary = downsample_cells(read_10x_mtx(*primary_files), n_cells=3000)
-metastases = {
-    "liver": downsample_cells(read_10x_mtx(*liver_files), n_cells=3000),
-    "lung": downsample_cells(read_10x_mtx(*lung_files), n_cells=3000),
-}
-
-model = MOTMIC(n_components=15, epsilon=0.08, rho=1.2, top_k=1)
-result = model.fit_predict(primary, metastases)
-
-scores = result.to_frame()
-high_mic = result.pan_score >= result.pan_score.quantile(0.8)
-gene_ranking = rank_genes_with_shap(primary, high_mic.astype(int))
+primary = read_10x_mtx(*primary_files)
+liver = read_10x_mtx(*liver_files)
+lung = read_10x_mtx(*lung_files)
 ```
+
+Run the validated GSE173958 M1 workflow on a server:
+
+```console
+python scripts/run_gse173958_sctour_validation.py \
+  --raw-dir data/raw/GSE173958 \
+  --max-cells-per-sample 4000 \
+  --epochs 30
+```
+
+## GSE173958 Validation Result
+
+The current repository includes a real M1 lineage-validation run. The workflow
+uses M1 primary tumor, M1-Met, M1-Liver, and M1-Lung from `GSE173958`, parses
+macsGESTALT clone labels from the `*.stats.txt.gz` files, and validates predicted
+primary MICs against the dominant metastatic lineage group.
+
+| Metric | Value |
+|---|---:|
+| Primary cells analyzed | 3,854 |
+| Lineage-labeled primary cells | 2,811 |
+| Aggressive-lineage primary cells | 131 |
+| scTour-MIC AUROC | 0.744 |
+| scTour-MIC AUPRC | 0.117 |
+| Top-20% MIC enrichment OR | 4.96 |
+| Fisher P value | 2.74e-18 |
+| OT transport-mass AUROC | 0.448 |
+
+![GSE173958 scTour-MIC latent score](figures/GSE173958_sctour_latent_mic_score.png)
+
+![GSE173958 lineage enrichment](figures/GSE173958_lineage_enrichment.png)
+
+![GSE173958 SHAP genes](figures/GSE173958_shap_top_genes.png)
 
 ## Tutorials
 
@@ -119,8 +144,8 @@ python scripts/download_geo.py --dry-run --from-filelist --gse GSE173958 GSE2490
 
 ## Method summary
 
-For each metastatic site `k`, MOT-MIC estimates a transport plan from primary
-tumor cells to metastatic tumor cells:
+For each metastatic site `k`, scMIC estimates a transport plan from primary
+tumor cells to metastatic tumor cells in scTour latent space:
 
 ```text
 T_k = UOT(primary_cells, metastatic_cells_k)
@@ -131,8 +156,9 @@ primary cell receives:
 
 ```text
 site_MIC_score_i,k = sum_j T_filtered_k(i,j)
-pan_MIC_score_i = sum_k site_MIC_score_i,k
-organ_specificity_i = max_k(site_MIC_score_i,k) / pan_MIC_score_i
+transport_pan_score_i = sum_k site_MIC_score_i,k
+organ_specificity_i = max_k(site_MIC_score_i,k) / transport_pan_score_i
+sctour_MIC_score_i = minmax(scTour_time_i)
 ```
 
 Candidate metastatic genes are prioritized with SHAP and then cross-checked by
