@@ -77,11 +77,11 @@ Dataset -> Data loading -> Model training -> Inference -> Visualization -> Valid
 
 | Notebook | Dataset | Analysis shown |
 |---|---|---|
-| `notebooks/01_motmic_example.ipynb` | Synthetic paired data | Fully runnable MOT-MIC quick start with SHAP ranking |
-| `notebooks/02_GSE173958_lineage_validation.ipynb` | GSE173958 | Primary-to-liver/lung/macrometastasis inference with lineage validation plan |
-| `notebooks/03_GSE249057_timecourse_discovery.ipynb` | GSE249057 | 0h parental tumor to 6h/2mo/4mo metastatic-state discovery |
-| `notebooks/04_GSE178318_human_crc_liver_metastasis.ipynb` | GSE178318 | Human CRC primary-to-liver validation and patient-level aggregation |
-| `notebooks/05_GSE277783_spatial_validation.ipynb` | GSE277783 | Spatial validation of MOT-MIC-derived MIC gene programs |
+| [MOT-MIC quick start](https://scmic.readthedocs.io/en/latest/notebook/01_motmic_example.html) | Synthetic paired data | Fully runnable MOT-MIC quick start with SHAP ranking |
+| [GSE173958 lineage validation](https://scmic.readthedocs.io/en/latest/notebook/02_GSE173958_lineage_validation.html) | GSE173958 | Primary-to-liver/lung/macrometastasis inference with lineage validation plan |
+| [GSE249057 time-course discovery](https://scmic.readthedocs.io/en/latest/notebook/03_GSE249057_timecourse_discovery.html) | GSE249057 | 0h parental tumor to 6h/2mo/4mo metastatic-state discovery |
+| [GSE178318 human CRC liver validation](https://scmic.readthedocs.io/en/latest/notebook/04_GSE178318_human_crc_liver_metastasis.html) | GSE178318 | Human CRC primary-to-liver validation and patient-level aggregation |
+| [GSE277783 spatial validation](https://scmic.readthedocs.io/en/latest/notebook/05_GSE277783_spatial_validation.html) | GSE277783 | Spatial validation of MOT-MIC-derived MIC gene programs |
 
 ## Recommended datasets
 
@@ -106,7 +106,7 @@ python scripts/download_geo.py --dry-run --from-filelist --gse GSE173958 GSE2490
 - Dataset plan: `DATASETS.md`
 - Notebook index: `notebooks/README.md`
 - Sphinx-style documentation skeleton: `docs/source/index.rst`
-- Online documentation: `https://yuhan1li.github.io/scMIC/`
+- Online documentation: https://scmic.readthedocs.io/en/latest/
 
 ## Method summary
 
