@@ -95,9 +95,23 @@ primary MICs against the dominant metastatic lineage group.
 | Fisher P value | 2.74e-18 |
 | OT transport-mass AUROC | 0.448 |
 
-![GSE173958 scTour-MIC latent score](figures/GSE173958_sctour_latent_mic_score.png)
+`OT transport-mass AUROC = 0.448` means that raw OT mass alone does not recover
+the aggressive lineage in this dataset. We therefore treat OT mass as an
+organotropic mapping signal, not as the main MIC score. The main validated MIC
+score is `sctour_MIC_score`, which follows the scTour metastatic-state axis.
+
+![GSE173958 sample pseudotime distribution](figures/GSE173958_sample_pseudotime_distribution.png)
+
+![GSE173958 pseudotime lineage trend](figures/GSE173958_pseudotime_lineage_trend.png)
+
+![GSE173958 scTour backbone by sample](figures/GSE173958_sctour_backbone_by_sample.png)
 
 ![GSE173958 lineage enrichment](figures/GSE173958_lineage_enrichment.png)
+
+The 2D scTour latent scatter below is kept as an auxiliary diagnostic, but it
+should not be interpreted as the primary progression trajectory.
+
+![GSE173958 scTour-MIC latent score](figures/GSE173958_sctour_latent_mic_score.png)
 
 ![GSE173958 SHAP genes](figures/GSE173958_shap_top_genes.png)
 

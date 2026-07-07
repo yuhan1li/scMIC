@@ -30,6 +30,8 @@ Key features
 - SHAP-based prioritization of pan-MIC and organ-specific metastatic genes.
 - Completed GSE173958 M1 validation: scTour-MIC AUROC 0.744 and top-20%
   aggressive-lineage enrichment OR 4.96, Fisher P 2.74e-18.
+- Trajectory views prioritize scTour pseudotime distributions and lineage
+  enrichment along pseudotime; 2D latent scatters are auxiliary diagnostics.
 
 Installation
 ------------

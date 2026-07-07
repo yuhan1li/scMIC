@@ -28,6 +28,10 @@ Completed M1 validation run:
 - OT transport mass alone was not sufficient as a pan-MIC score in this run
   (AUROC `0.448`), so the current framework uses scTour for the main MIC score
   and OT for organotropic mapping.
+- Trajectory visualization should prioritize the 1D scTour pseudotime axis,
+  sample-state distributions, and lineage enrichment along pseudotime. The 2D
+  scTour latent scatter is only an auxiliary diagnostic and should not be read
+  as a complete cancer progression path.
 
 Validation tasks:
 

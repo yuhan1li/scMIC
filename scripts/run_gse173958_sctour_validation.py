@@ -257,6 +257,27 @@ def evaluate_primary(adata: ad.AnnData, scores: pd.DataFrame, outdir: Path) -> t
     return scores, metrics
 
 
+def save_sctour_metadata(adata: ad.AnnData, scores: pd.DataFrame, outdir: Path) -> pd.DataFrame:
+    latent = np.asarray(adata.obsm["X_sctour"])
+    meta = pd.DataFrame(
+        {
+            "sample": adata.obs["sample"].astype(str).values,
+            "lineage_clone": adata.obs["lineage_clone"].astype("object").values,
+            "aggressive_clone": adata.obs["aggressive_clone"].fillna(False).astype(bool).values,
+            "sctour_pseudotime": adata.obs["sctour_pseudotime"].astype(float).values,
+            "sctour_latent_1": latent[:, 0],
+            "sctour_latent_2": latent[:, 1] if latent.shape[1] > 1 else 0.0,
+        },
+        index=adata.obs_names,
+    )
+    for col in ["sctour_MIC_score", "transport_pan_score", "state_transport_MIC_score"]:
+        meta[col] = np.nan
+        common = meta.index.intersection(scores.index)
+        meta.loc[common, col] = scores.loc[common, col]
+    meta.to_csv(outdir / "GSE173958_sctour_trajectory_metadata.csv")
+    return meta
+
+
 def rank_genes_with_shap(adata: ad.AnnData, scores: pd.DataFrame, outdir: Path, random_state: int) -> pd.DataFrame:
     primary = adata[adata.obs["sample"].eq("primary")].copy()
     y = scores.loc[primary.obs_names, "sctour_MIC_score"].ge(scores["sctour_MIC_score"].quantile(0.8)).astype(int)
@@ -300,6 +321,90 @@ def make_figures(adata: ad.AnnData, scores: pd.DataFrame, ranking: pd.DataFrame,
     fig.colorbar(sca, ax=ax, label="scTour-MIC score")
     fig.tight_layout()
     fig.savefig(figdir / "GSE173958_sctour_latent_mic_score.png", dpi=220)
+    plt.close(fig)
+
+    all_coords = np.asarray(adata.obsm["X_sctour"])[:, :2]
+    all_time = adata.obs["sctour_pseudotime"].astype(float)
+    sample_colors = {"primary": "#3b6ea8", "met": "#c85a44", "liver": "#7a9b42", "lung": "#7b5ea7"}
+    fig, ax = plt.subplots(figsize=(6.2, 5.0))
+    for sample_name, color in sample_colors.items():
+        mask = adata.obs["sample"].astype(str).eq(sample_name).values
+        ax.scatter(
+            all_coords[mask, 0],
+            all_coords[mask, 1],
+            s=7,
+            alpha=0.45,
+            linewidths=0,
+            color=color,
+            label=sample_name,
+        )
+    bins = pd.qcut(all_time.rank(method="first"), q=18, labels=False)
+    backbone = (
+        pd.DataFrame({"bin": bins, "x": all_coords[:, 0], "y": all_coords[:, 1], "time": all_time.values})
+        .groupby("bin", observed=True)[["x", "y", "time"]]
+        .mean()
+        .sort_values("time")
+    )
+    ax.plot(backbone["x"], backbone["y"], color="black", lw=2.0, alpha=0.8)
+    ax.scatter(backbone["x"], backbone["y"], c=backbone["time"], cmap="magma", s=30, edgecolor="black", linewidth=0.3)
+    ax.annotate(
+        "",
+        xy=(backbone["x"].iloc[-1], backbone["y"].iloc[-1]),
+        xytext=(backbone["x"].iloc[-3], backbone["y"].iloc[-3]),
+        arrowprops={"arrowstyle": "->", "lw": 2, "color": "black"},
+    )
+    ax.set_xlabel("scTour latent 1")
+    ax.set_ylabel("scTour latent 2")
+    ax.set_title("scTour latent backbone across M1 samples")
+    ax.legend(frameon=False, markerscale=2)
+    fig.tight_layout()
+    fig.savefig(figdir / "GSE173958_sctour_backbone_by_sample.png", dpi=220)
+    plt.close(fig)
+
+    trajectory = pd.DataFrame(
+        {
+            "sample": adata.obs["sample"].astype(str).values,
+            "time": all_time.values,
+            "aggressive_clone": adata.obs["aggressive_clone"].fillna(False).astype(bool).values,
+        },
+        index=adata.obs_names,
+    )
+    primary_traj = trajectory.loc[scores.index].copy()
+    primary_traj["sctour_MIC_score"] = scores["sctour_MIC_score"]
+    primary_traj["aggressive_clone"] = scores["aggressive_clone"].astype(bool)
+    primary_traj["time_bin"] = pd.qcut(primary_traj["time"].rank(method="first"), q=12, labels=False)
+    bin_summary = primary_traj.groupby("time_bin", observed=True).agg(
+        mean_time=("time", "mean"),
+        aggressive_fraction=("aggressive_clone", "mean"),
+        mean_mic=("sctour_MIC_score", "mean"),
+    )
+    fig, ax1 = plt.subplots(figsize=(6.3, 3.8))
+    ax1.plot(bin_summary["mean_time"], bin_summary["aggressive_fraction"], marker="o", color="#c85a44", lw=2)
+    ax1.set_xlabel("scTour pseudotime / metastatic-state axis")
+    ax1.set_ylabel("Aggressive-clone fraction", color="#c85a44")
+    ax1.tick_params(axis="y", labelcolor="#c85a44")
+    ax2 = ax1.twinx()
+    ax2.plot(bin_summary["mean_time"], bin_summary["mean_mic"], marker="s", color="#3b6ea8", lw=2)
+    ax2.set_ylabel("Mean scTour-MIC score", color="#3b6ea8")
+    ax2.tick_params(axis="y", labelcolor="#3b6ea8")
+    ax1.set_title("Lineage enrichment along scTour pseudotime")
+    fig.tight_layout()
+    fig.savefig(figdir / "GSE173958_pseudotime_lineage_trend.png", dpi=220)
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(6.4, 3.8))
+    ordered_samples = ["primary", "met", "liver", "lung"]
+    data = [trajectory.loc[trajectory["sample"].eq(s), "time"].values for s in ordered_samples]
+    parts = ax.violinplot(data, positions=np.arange(len(ordered_samples)), showmeans=True, showextrema=False)
+    for body, sample_name in zip(parts["bodies"], ordered_samples):
+        body.set_facecolor(sample_colors[sample_name])
+        body.set_alpha(0.65)
+    parts["cmeans"].set_color("black")
+    ax.set_xticks(np.arange(len(ordered_samples)), ordered_samples)
+    ax.set_ylabel("scTour pseudotime / metastatic-state axis")
+    ax.set_title("Sample states ordered by scTour pseudotime")
+    fig.tight_layout()
+    fig.savefig(figdir / "GSE173958_sample_pseudotime_distribution.png", dpi=220)
     plt.close(fig)
 
     threshold = scores["sctour_MIC_score"].quantile(0.8)
@@ -347,6 +452,7 @@ def main() -> None:
     train_sctour_embedding(adata, args.n_latent, args.epochs, args.random_state)
     scores = run_transport_scores(adata, args.epsilon, args.rho, args.top_k)
     scores, metrics = evaluate_primary(adata, scores, outdir)
+    save_sctour_metadata(adata, scores, outdir)
     ranking = rank_genes_with_shap(adata, scores, outdir, args.random_state)
     make_figures(adata, scores, ranking, metrics, figdir)
 
