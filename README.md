@@ -28,7 +28,7 @@ bulk survival cohorts.
   metastatic sites.
 - Lineage-aware validation workflow using `GSE173958`, the strongest available
   public benchmark for metastatic clone aggression.
-- scTour-style tutorial notebooks for each example dataset.
+- scTour-style tutorial notebooks for each public metastasis dataset.
 - SHAP-based gene prioritization for pan-MIC and organ-specific metastatic
   programs.
 - Spatial and bulk-cohort validation templates for MIC signature transfer.
@@ -43,20 +43,30 @@ cd scMIC
 pip install -r requirements.txt
 ```
 
-Run the lightweight example:
+Regenerate the algorithm schematic:
 
 ```console
-python scripts/run_example.py
 python scripts/make_diagram.py
 ```
 
 ## Basic usage
 
 ```python
-from motmic import MOTMIC, simulate_metastasis_dataset
+from pathlib import Path
+
+from motmic import MOTMIC, downsample_cells, find_10x_triplet, read_10x_mtx
 from motmic.interpret import rank_genes_with_shap
 
-primary, metastases, truth = simulate_metastasis_dataset()
+raw_dir = Path("data/raw/GSE173958")
+primary_files = find_10x_triplet(raw_dir, sample_token="primary")
+liver_files = find_10x_triplet(raw_dir, sample_token="liver")
+lung_files = find_10x_triplet(raw_dir, sample_token="lung")
+
+primary = downsample_cells(read_10x_mtx(*primary_files), n_cells=3000)
+metastases = {
+    "liver": downsample_cells(read_10x_mtx(*liver_files), n_cells=3000),
+    "lung": downsample_cells(read_10x_mtx(*lung_files), n_cells=3000),
+}
 
 model = MOTMIC(n_components=15, epsilon=0.08, rho=1.2, top_k=1)
 result = model.fit_predict(primary, metastases)
@@ -77,7 +87,6 @@ Dataset -> Data loading -> Model training -> Inference -> Visualization -> Valid
 
 | Notebook | Dataset | Analysis shown |
 |---|---|---|
-| [MOT-MIC quick start](https://scmic.readthedocs.io/en/latest/notebook/01_motmic_example.html) | Synthetic paired data | Fully runnable MOT-MIC quick start with SHAP ranking |
 | [GSE173958 lineage validation](https://scmic.readthedocs.io/en/latest/notebook/02_GSE173958_lineage_validation.html) | GSE173958 | Primary-to-liver/lung/macrometastasis inference with lineage validation plan |
 | [GSE249057 time-course discovery](https://scmic.readthedocs.io/en/latest/notebook/03_GSE249057_timecourse_discovery.html) | GSE249057 | 0h parental tumor to 6h/2mo/4mo metastatic-state discovery |
 | [GSE178318 human CRC liver validation](https://scmic.readthedocs.io/en/latest/notebook/04_GSE178318_human_crc_liver_metastasis.html) | GSE178318 | Human CRC primary-to-liver validation and patient-level aggregation |

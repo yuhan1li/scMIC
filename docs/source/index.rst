@@ -37,9 +37,9 @@ MOT-MIC requires Python 3.8 or later::
     cd scMIC
     pip install -r requirements.txt
 
-Run the quick example::
+Regenerate the algorithm schematic::
 
-    python scripts/run_example.py
+    python scripts/make_diagram.py
 
 Tutorials
 ---------
@@ -49,7 +49,6 @@ Tutorials
    :caption: Tutorials
    :hidden:
 
-   notebook/01_motmic_example
    notebook/02_GSE173958_lineage_validation
    notebook/03_GSE249057_timecourse_discovery
    notebook/04_GSE178318_human_crc_liver_metastasis
@@ -74,4 +73,3 @@ Reference datasets
 The recommended validation hierarchy is GSE173958 lineage tracing, GSE249057
 time-course discovery, GSE178318 paired human CRC liver metastasis, GSE277783
 spatial validation, and TCGA bulk survival transfer.
-
