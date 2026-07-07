@@ -1,5 +1,7 @@
 # MOT-MIC
 
+[![Docs](https://github.com/yuhan1li/scMIC/actions/workflows/docs.yml/badge.svg)](https://github.com/yuhan1li/scMIC/actions/workflows/docs.yml)
+
 <img src="figures/motmic_algorithm_schematic.png" width="520px" align="left">
 
 MOT-MIC is a computational framework for discovering metastasis-initiating
@@ -104,6 +106,7 @@ python scripts/download_geo.py --dry-run --from-filelist --gse GSE173958 GSE2490
 - Dataset plan: `DATASETS.md`
 - Notebook index: `notebooks/README.md`
 - Sphinx-style documentation skeleton: `docs/source/index.rst`
+- Online documentation: `https://yuhan1li.github.io/scMIC/`
 
 ## Method summary
 
