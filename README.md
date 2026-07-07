@@ -4,6 +4,10 @@ MOT-MIC, short for Multi-Organ Optimal Transport for Metastasis-Initiating Cells
 is a prototype framework for identifying metastasis-initiating cells (MICs) in
 paired primary and metastatic single-cell RNA-seq data.
 
+## Algorithm Overview
+
+![MOT-MIC algorithm schematic](figures/motmic_algorithm_schematic.png)
+
 The method is designed around the literature in `相关文献`:
 
 - scMIC: embedding + unbalanced optimal transport + top-k transport filtering.
@@ -99,4 +103,3 @@ The recommended final ranking combines:
 
 SHAP should be used as a prioritization tool, not as a standalone proof of causal
 metastatic function.
-
