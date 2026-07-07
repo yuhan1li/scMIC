@@ -50,10 +50,24 @@ motmic/                  Python package
 scripts/run_example.py   Reproducible synthetic demonstration
 scripts/download_geo.py  GEO supplementary-file downloader
 scripts/make_diagram.py  Algorithm schematic
-notebooks/               Example notebook
+notebooks/               scTour-style tutorial notebooks
 figures/                 Generated schematic
 results/                 Example outputs
 ```
+
+## Tutorials
+
+The notebooks follow the same teaching rhythm as the scTour basic inference
+tutorial: `Dataset -> Data loading -> Model training -> Inference ->
+Visualization -> Validation -> Robustness`.
+
+| Notebook | Dataset | Analysis shown |
+|---|---|---|
+| `notebooks/01_motmic_example.ipynb` | Synthetic paired data | Fully runnable MOT-MIC quick start with SHAP ranking |
+| `notebooks/02_GSE173958_lineage_validation.ipynb` | GSE173958 | Primary-to-liver/lung/macrometastasis inference with lineage validation plan |
+| `notebooks/03_GSE249057_timecourse_discovery.ipynb` | GSE249057 | 0h parental tumor to 6h/2mo/4mo metastatic-state discovery |
+| `notebooks/04_GSE178318_human_crc_liver_metastasis.ipynb` | GSE178318 | Human CRC primary-to-liver validation and patient-level aggregation |
+| `notebooks/05_GSE277783_spatial_validation.ipynb` | GSE277783 | Spatial validation of MOT-MIC-derived MIC gene programs |
 
 ## Quick Start
 
