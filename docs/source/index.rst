@@ -8,10 +8,11 @@ MOT-MIC: multi-organ optimal transport for metastasis-initiating cell discovery
 scMIC is a computational framework for discovering metastasis-initiating
 cells from paired primary and metastatic single-cell transcriptomes.
 
-It provides a unified workflow for scoring primary tumor cells with a scTour
-metastatic-state axis, assigning organ-specific metastatic propensity with
-unbalanced optimal transport, validating predictions against lineage and
-clinical evidence, and ranking metastatic genes with SHAP-based interpretability.
+It provides a unified workflow for scoring primary tumor cells with a
+branch-preserving scTour metastatic-state axis, assigning organ-specific
+metastatic propensity with unbalanced optimal transport, validating predictions
+against lineage and clinical evidence, and ranking metastatic genes with
+SHAP-based interpretability.
 
 .. raw:: html
 
@@ -21,6 +22,8 @@ Key features
 ------------
 
 - scTour-based MIC scoring from paired primary and metastatic scRNA-seq data.
+- SAKURA-inspired knowledge priors that preserve liver, lung, bone,
+  lymph-node, and brain metastatic branches.
 - Unbalanced optimal transport with sparse top-k origin filtering for
   organotropic mapping.
 - Organotropic MIC scores for liver, lung, bone, brain, or user-defined sites.

@@ -19,13 +19,23 @@ For human tissue samples, restrict analysis to malignant tumor cells using:
 - CNV inference: CopyKAT, inferCNV, SPATA2 for spatial data;
 - malignancy classifiers such as scCancer2/XGBoost when available.
 
-## Step 2: scTour Latent Representation
+## Step 2: Branch-Preserving, Knowledge-Guided Representation
 
 Concatenate primary and metastatic tumor cells over shared genes and learn a
-dynamic latent representation with scTour. This replaces the PCA/AutoEncoder
-representation used by the reference scMIC manuscript while keeping the same
-biological assumption: metastasis-initiating primary cells should lie closer to
-metastatic-state dynamics than ordinary primary tumor cells.
+branch-preserving representation. The key principle is:
+
+```text
+Z_total = Z_shared_MIC_trunk + Z_organ_branch + Z_nuisance
+```
+
+Only `Z_nuisance` should be removed. Organ labels, organ-specific metastatic
+programs, and organ-prior scores are biological signals and must not be
+regressed out.
+
+This follows the SAKURA idea: use knowledge-derived genes of interest to guide
+dimensionality reduction so rare but important signals are not lost. In scMIC,
+the knowledge priors are MIC-state genes plus liver/lung/bone/lymph-node/brain
+organotropic genes.
 
 Recommended first-pass gene universe:
 
@@ -35,8 +45,9 @@ Recommended first-pass gene universe:
   JAK/STAT3, PI3K/AKT/mTOR, WNT, angiogenesis, ECM-receptor, and focal
   adhesion genes.
 
-The main primary-cell MIC score is the normalized scTour pseudotime / metastatic
-state axis among primary tumor cells:
+After nuisance residualization and prior weighting, scTour learns the shared MIC
+trunk. The main primary-cell MIC score is the normalized scTour pseudotime /
+metastatic-state axis among primary tumor cells:
 
 ```text
 sctour_MIC_score_i = minmax(scTour_time_i)
@@ -45,7 +56,7 @@ sctour_MIC_score_i = minmax(scTour_time_i)
 In GSE173958 M1, this score recovers the dominant aggressive lineage group with
 AUROC = 0.744 and top-20% Fisher enrichment OR = 4.96.
 
-## Step 3: Organ-Specific UOT
+## Step 3: Organ-Specific UOT And Branch Assignment
 
 For each metastatic site `k`, compute a cost matrix between primary and metastatic
 scTour latent profiles:
@@ -66,7 +77,7 @@ Then retain only the strongest `top_k` origins for each metastatic cell:
 T_filtered_k[:,j] = top_k(T_k[:,j])
 ```
 
-## Step 4: MIC Scoring
+## Step 4: MIC And Branch Scoring
 
 OT is used primarily for organotropic propensity and primary-to-metastasis
 mapping. In the current GSE173958 M1 run, OT transport mass alone was not a
@@ -79,7 +90,22 @@ transport_pan_score_i = sum_k site_MIC_score_i,k
 organ_specificity_i = max_k(site_MIC_score_i,k) / transport_pan_score_i
 state_transport_MIC_score_i =
     0.7 * sctour_MIC_score_i + 0.3 * (1 - minmax(transport_pan_score_i))
+predicted_organ_branch_i = argmax_k(site_MIC_score_i,k)
 ```
+
+The expected visualization is a rooted branch graph:
+
+```text
+primary low-MIC -> shared MIC trunk
+                  -> liver branch
+                  -> lung branch
+                  -> bone branch
+                  -> lymph-node branch
+                  -> brain branch
+```
+
+In datasets that lack some metastatic sites, only the observed organ branches
+should be interpreted as validated.
 
 ## Step 5: Validation
 

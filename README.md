@@ -2,16 +2,15 @@
 
 [![Docs](https://github.com/yuhan1li/scMIC/actions/workflows/docs.yml/badge.svg)](https://github.com/yuhan1li/scMIC/actions/workflows/docs.yml)
 
-<img src="figures/motmic_algorithm_schematic.png" width="520px" align="left">
+<img src="figures/branch_preserving_scmic_schematic.png" width="640px" align="left">
 
 scMIC is a computational framework for discovering metastasis-initiating
 cells from paired primary and metastatic single-cell transcriptomes.
 
-It uses scTour to learn a metastatic-state latent axis, then uses
-unbalanced optimal transport to map primary tumor cells to metastatic tumor
-cells across different secondary sites. In the current validated workflow,
-`sctour_MIC_score` is the main primary-cell MIC score and OT-derived scores are
-used for organ-specific metastatic propensity.
+It uses a SAKURA-inspired, knowledge-guided strategy to preserve rare
+organotropic signals while removing technical nuisance variation. scTour learns
+the shared MIC trunk, and unbalanced optimal transport maps primary tumor cells
+into organ-specific metastatic branches.
 
 MOT-MIC is designed for method development and validation on public metastasis
 datasets, including lineage-traced, time-course, paired human, spatial, and
@@ -21,8 +20,12 @@ bulk survival cohorts.
 
 ## Key features
 
-- scTour-based metastasis-initiating cell scoring from paired primary and
-  metastatic scRNA-seq data.
+- Branch-preserving scTour MIC scoring from paired primary and metastatic
+  scRNA-seq data.
+- SAKURA-inspired organ priors for liver, lung, bone, lymph-node, and brain
+  metastatic branches.
+- Nuisance residualization for QC, library size, mitochondrial fraction,
+  cell-cycle, and technical batch effects while preserving organ programs.
 - Unbalanced optimal transport with sparse top-k origin filtering for
   interpretable primary-to-metastasis organotropic mapping.
 - Organotropic MIC scores for liver, lung, bone, brain, or user-defined
@@ -49,6 +52,31 @@ Regenerate the algorithm schematic:
 
 ```console
 python scripts/make_diagram.py
+```
+
+## Branch-Preserving Upgrade
+
+The upgraded framework explicitly separates three sources of variation:
+
+```text
+Z_total = Z_shared_MIC_trunk + Z_organ_branch + Z_nuisance
+```
+
+Only `Z_nuisance` is removed. Organ programs are not regressed out. Instead,
+compact liver/lung/bone/lymph-node/brain prior gene sets are upweighted so rare
+organotropic signals can survive dimensionality reduction. This follows the
+SAKURA idea of using knowledge-derived genes to guide dimensionality reduction
+and recover important rare or subtle signals.
+
+```python
+from motmic import BranchPreservingEmbedder, assign_organ_branch
+
+embedder = BranchPreservingEmbedder(prior_weight=3.0, n_components=20)
+branch_result = embedder.fit_transform(primary_and_metastasis_expr, nuisance_covariates=qc_table)
+
+organ_program_scores = branch_result.organ_scores
+branch_embedding = branch_result.embedding
+predicted_branch = assign_organ_branch(ot_site_scores)
 ```
 
 ## Basic usage
@@ -184,4 +212,7 @@ reproducibility, and survival association.
 MOT-MIC is motivated by recent work on scMIC, macsGESTALT lineage tracing,
 MetaNet organotropic risk modeling, SIDISH clinical single-cell integration, and
 single-cell trajectory/transport methods including scTour and optimal transport
-models.
+models. The branch-preserving upgrade is inspired by SAKURA, a
+knowledge-guided strategy for preserving important rare or subtle single-cell
+signals during dimensionality reduction:
+https://pmc.ncbi.nlm.nih.gov/articles/PMC12964657/
