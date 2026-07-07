@@ -1,65 +1,77 @@
 # MOT-MIC
 
-MOT-MIC, short for Multi-Organ Optimal Transport for Metastasis-Initiating Cells,
-is a prototype framework for identifying metastasis-initiating cells (MICs) in
-paired primary and metastatic single-cell RNA-seq data.
+<img src="figures/motmic_algorithm_schematic.png" width="520px" align="left">
 
-## Algorithm Overview
+MOT-MIC is a computational framework for discovering metastasis-initiating
+cells from paired primary and metastatic single-cell transcriptomes.
 
-![MOT-MIC algorithm schematic](figures/motmic_algorithm_schematic.png)
+It uses a multi-organ optimal-transport architecture to map primary tumor cells
+to metastatic tumor cells across different secondary sites, then assigns each
+primary cell both a pan-metastatic score and organ-specific metastatic
+propensity scores.
 
-The method is designed around the literature in `相关文献`:
+MOT-MIC is designed for method development and validation on public metastasis
+datasets, including lineage-traced, time-course, paired human, spatial, and
+bulk survival cohorts.
 
-- scMIC: embedding + unbalanced optimal transport + top-k transport filtering.
-- macsGESTALT / GSE173958: lineage tracing as the closest available cell-level
-  gold standard for metastatic aggression.
-- MetaNet: organotropic risk modeling and SHAP-based feature interpretation.
-- SIDISH: linking single-cell states to clinical outcomes and spatial validation.
+<br clear="left"/>
 
-## What The Algorithm Estimates
+## Key features
 
-For every primary tumor cell, MOT-MIC estimates:
+- Multi-organ metastasis-initiating cell scoring from paired primary and
+  metastatic scRNA-seq data.
+- Unbalanced optimal transport with sparse top-k origin filtering for
+  interpretable primary-to-metastasis mapping.
+- Organotropic MIC scores for liver, lung, bone, brain, or user-defined
+  metastatic sites.
+- Lineage-aware validation workflow using `GSE173958`, the strongest available
+  public benchmark for metastatic clone aggression.
+- scTour-style tutorial notebooks for each example dataset.
+- SHAP-based gene prioritization for pan-MIC and organ-specific metastatic
+  programs.
+- Spatial and bulk-cohort validation templates for MIC signature transfer.
 
-```text
-pan_MIC_score
-lung_MIC_score
-liver_MIC_score
-bone_MIC_score
-brain_MIC_score
-organ_specificity
+## Installation
+
+Clone the repository and install the required Python packages:
+
+```console
+git clone https://github.com/yuhan1li/scMIC.git
+cd scMIC
+pip install -r requirements.txt
 ```
 
-The output is therefore richer than a binary MIC label: it captures both
-metastatic competence and metastatic destination bias.
+Run the lightweight example:
 
-## Recommended Datasets
+```console
+python scripts/run_example.py
+python scripts/make_diagram.py
+```
 
-| Dataset | Role | Gold-standard level | Notes |
-|---|---|---:|---|
-| GSE173958 | Main validation | Strongest | scRNA-seq plus CRISPR lineage tracing in metastatic PDAC; aggressive clones provide the closest cell-level ground truth. |
-| GSE249057 / GSE249058 | Discovery/training | Weak | Multi-timepoint ESCC lung metastasis model; useful for learning early-to-late metastatic state transitions. |
-| GSE178318 | Human paired validation | Weak clinical | Matched primary CRC and liver metastasis scRNA-seq; validate MIC burden against liver metastatic burden. |
-| GSE277783 | Spatial validation | Weak spatial | PDAC spatial data; validate MIC/spots in spatial niches and treatment-associated regions. |
-| OMIX002487 | External human validation | Weak clinical | Human PDAC scRNA-seq used in the scMIC paper. |
-| TCGA | Bulk survival validation | Cohort-level only | Test whether derived MIC signatures predict OS/DFS. |
+## Basic usage
 
-## Repository Layout
+```python
+from motmic import MOTMIC, simulate_metastasis_dataset
+from motmic.interpret import rank_genes_with_shap
 
-```text
-motmic/                  Python package
-scripts/run_example.py   Reproducible synthetic demonstration
-scripts/download_geo.py  GEO supplementary-file downloader
-scripts/make_diagram.py  Algorithm schematic
-notebooks/               scTour-style tutorial notebooks
-figures/                 Generated schematic
-results/                 Example outputs
+primary, metastases, truth = simulate_metastasis_dataset()
+
+model = MOTMIC(n_components=15, epsilon=0.08, rho=1.2, top_k=1)
+result = model.fit_predict(primary, metastases)
+
+scores = result.to_frame()
+high_mic = result.pan_score >= result.pan_score.quantile(0.8)
+gene_ranking = rank_genes_with_shap(primary, high_mic.astype(int))
 ```
 
 ## Tutorials
 
-The notebooks follow the same teaching rhythm as the scTour basic inference
-tutorial: `Dataset -> Data loading -> Model training -> Inference ->
-Visualization -> Validation -> Robustness`.
+The tutorials follow the same teaching rhythm as the scTour basic inference
+notebooks:
+
+```text
+Dataset -> Data loading -> Model training -> Inference -> Visualization -> Validation -> Robustness
+```
 
 | Notebook | Dataset | Analysis shown |
 |---|---|---|
@@ -69,51 +81,55 @@ Visualization -> Validation -> Robustness`.
 | `notebooks/04_GSE178318_human_crc_liver_metastasis.ipynb` | GSE178318 | Human CRC primary-to-liver validation and patient-level aggregation |
 | `notebooks/05_GSE277783_spatial_validation.ipynb` | GSE277783 | Spatial validation of MOT-MIC-derived MIC gene programs |
 
-## Quick Start
+## Recommended datasets
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python scripts/run_example.py
-python scripts/make_diagram.py
+| Dataset | Role | Gold-standard level | Notes |
+|---|---|---:|---|
+| `GSE173958` | Main validation | Strongest | scRNA-seq plus CRISPR lineage tracing in metastatic PDAC; aggressive clones provide the closest cell-level ground truth. |
+| `GSE249057` / `GSE249058` | Discovery/training | Weak | Multi-timepoint ESCC lung metastasis model; useful for learning early-to-late metastatic state transitions. |
+| `GSE178318` | Human paired validation | Weak clinical | Matched primary CRC and liver metastasis scRNA-seq; validate MIC burden against liver metastatic burden. |
+| `GSE277783` | Spatial validation | Weak spatial | PDAC spatial data; validate MIC/spots in spatial niches and treatment-associated regions. |
+| `OMIX002487` | External human validation | Weak clinical | Human PDAC scRNA-seq used in the scMIC manuscript. |
+| TCGA | Bulk survival validation | Cohort-level only | Test whether derived MIC signatures predict OS/DFS. |
+
+Inspect available GEO files without downloading large matrices:
+
+```console
+python scripts/download_geo.py --dry-run --from-filelist --gse GSE173958 GSE249057
 ```
 
-The example uses a synthetic paired primary/multi-metastasis dataset. It is small
-enough for GitHub while preserving the expected inputs and outputs.
+## Documentation
 
-## Core Workflow
+- Algorithm details: `ALGORITHM.md`
+- Dataset plan: `DATASETS.md`
+- Notebook index: `notebooks/README.md`
+- Sphinx-style documentation skeleton: `docs/source/index.rst`
 
-1. Select malignant tumor cells using marker expression and CNV/malignancy scores.
-2. Learn a robust latent representation from primary and metastatic cells.
-3. For each metastatic organ, run unbalanced optimal transport from primary cells
-   to metastatic cells.
-4. Apply top-k filtering on transport columns to enforce sparse interpretable
-   metastatic origins.
-5. Sum filtered transport weights per primary cell to obtain organ-specific MIC
-   scores.
-6. Validate against lineage, clinical burden, spatial enrichment, and survival.
-7. Train an interpretable model and rank genes with SHAP or permutation
-   importance.
+## Method summary
 
-## SHAP Gene Ranking
-
-MOT-MIC can train a model using primary-cell expression as input and MIC scores or
-high/low MIC labels as output. For tree models, SHAP values are summarized as:
+For each metastatic site `k`, MOT-MIC estimates a transport plan from primary
+tumor cells to metastatic tumor cells:
 
 ```text
-importance_gene = mean(abs(SHAP_gene))
+T_k = UOT(primary_cells, metastatic_cells_k)
 ```
 
-The recommended final ranking combines:
+Sparse top-k filtering is applied to each metastatic cell column, and each
+primary cell receives:
 
 ```text
-0.35 * SHAP score
-+ 0.25 * MIC vs non-MIC differential expression
-+ 0.20 * lineage/aggressive-clone enrichment
-+ 0.10 * cross-dataset reproducibility
-+ 0.10 * bulk survival association
+site_MIC_score_i,k = sum_j T_filtered_k(i,j)
+pan_MIC_score_i = sum_k site_MIC_score_i,k
+organ_specificity_i = max_k(site_MIC_score_i,k) / pan_MIC_score_i
 ```
 
-SHAP should be used as a prioritization tool, not as a standalone proof of causal
-metastatic function.
+Candidate metastatic genes are prioritized with SHAP and then cross-checked by
+MIC/non-MIC differential expression, lineage enrichment, cross-dataset
+reproducibility, and survival association.
+
+## Reference datasets and literature
+
+MOT-MIC is motivated by recent work on scMIC, macsGESTALT lineage tracing,
+MetaNet organotropic risk modeling, SIDISH clinical single-cell integration, and
+single-cell trajectory/transport methods including scTour and optimal transport
+models.

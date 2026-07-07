@@ -1,0 +1,12 @@
+sphinx
+sphinx-rtd-theme
+myst-nb
+ipykernel
+numpy
+scipy
+pandas
+scikit-learn
+matplotlib
+seaborn
+shap
+

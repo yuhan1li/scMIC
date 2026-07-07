@@ -7,4 +7,4 @@ data/processed/
 results/*.tmp
 results/*.h5ad
 results/*.rds
-
+docs/build/
